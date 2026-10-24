@@ -36,15 +36,3 @@ Works on GNOME Shell 45–50.
   (the built-in date/time is position 0)
 - `prefs.js` — settings window (Adw)
 - `schemas/` — GSettings for timezone / label / format
-
-## Review check (Shexli)
-
-Checked 2026-10-24 with Shexli 0.2.1 (the analyzer the extensions.gnome.org
-upload page recommends):
-- `second-clock-ego-submission.zip` — **clean: 0 findings, 0 errors, 0 warnings**
-  (upload this one to extensions.gnome.org; it has no `gschemas.compiled`,
-  per EGO-P-006 — EGO compiles schemas itself)
-- The local-install zip keeps `gschemas.compiled` (needed for direct
-  `gnome-extensions install`), so Shexli shows that one expected warning for it.
-- Fixed from the first run: EGO-L-003 — the GSettings `changed` signal is now
-  disconnected in `destroy()`.
