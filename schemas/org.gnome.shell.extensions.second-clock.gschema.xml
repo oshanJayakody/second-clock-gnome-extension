@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.second-clock" path="/org/gnome/shell/extensions/second-clock/">
+    <key name="timezone" type="s">
+      <default>"Asia/Colombo"</default>
+      <summary>IANA timezone for the second clock, e.g. Asia/Colombo</summary>
+    </key>
+    <key name="label" type="s">
+      <default>"Sri Lanka"</default>
+      <summary>Short label shown before the time (leave empty to hide)</summary>
+    </key>
+    <key name="show-label" type="b">
+      <default>true</default>
+      <summary>Show the label</summary>
+    </key>
+    <key name="show-seconds" type="b">
+      <default>false</default>
+      <summary>Show seconds</summary>
+    </key>
+    <key name="use-24h" type="b">
+      <default>true</default>
+      <summary>Use 24-hour format</summary>
+    </key>
+    <key name="show-date" type="b">
+      <default>false</default>
+      <summary>Also show the date for that timezone</summary>
+    </key>
+  </schema>
+</schemalist>
