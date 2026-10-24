@@ -1,5 +1,8 @@
 # Second Clock — GNOME Shell extension
 
+<img width="480" height="33" alt="Screenshot From 2026-10-24 21-15-25" src="https://github.com/user-attachments/assets/5af55c94-9d6f-48de-840c-f1a36e67c00c" />
+<img width="491" height="276" alt="Screenshot From 2026-10-24 21-22-03" src="https://github.com/user-attachments/assets/f19edc87-6ae7-4783-86c8-8e0bdef7de5f" />
+
 Shows a **second clock in the centre of the top panel, right beside GNOME's
 built-in date and time**.
 
