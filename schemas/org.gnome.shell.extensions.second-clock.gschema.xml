@@ -13,10 +13,6 @@
       <default>true</default>
       <summary>Show the label</summary>
     </key>
-    <key name="show-seconds" type="b">
-      <default>false</default>
-      <summary>Show seconds</summary>
-    </key>
     <key name="use-24h" type="b">
       <default>true</default>
       <summary>Use 24-hour format</summary>
@@ -24,6 +20,37 @@
     <key name="show-date" type="b">
       <default>false</default>
       <summary>Also show the date for that timezone</summary>
+    </key>
+    <key name="show-weather" type="b">
+      <default>true</default>
+      <summary>Show current weather next to the clock (Open-Meteo, no API key)</summary>
+    </key>
+    <key name="weather-label" type="s">
+      <default>"Melbourne"</default>
+      <summary>Weather location name shown in the menu</summary>
+    </key>
+    <key name="weather-lat" type="s">
+      <default>"-37.814"</default>
+      <summary>Weather latitude</summary>
+    </key>
+    <key name="weather-lon" type="s">
+      <default>"144.963"</default>
+      <summary>Weather longitude</summary>
+    </key>
+    <key name="weather-refresh" type="i">
+      <default>30</default>
+      <range min="10" max="120"/>
+      <summary>Weather refresh interval (minutes)</summary>
+    </key>
+    <key name="pomodoro-work" type="i">
+      <default>25</default>
+      <range min="1" max="180"/>
+      <summary>Pomodoro work length (minutes)</summary>
+    </key>
+    <key name="pomodoro-break" type="i">
+      <default>5</default>
+      <range min="1" max="60"/>
+      <summary>Pomodoro break length (minutes)</summary>
     </key>
   </schema>
 </schemalist>

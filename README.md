@@ -28,8 +28,8 @@ Click the second clock in the panel:
 
 - **Switch timezone** — quick list (Colombo, Melbourne, Dubai, Singapore,
   London, New York, Los Angeles, Tokyo)
-- **Settings…** — any IANA timezone, custom label, 12/24-hour, seconds,
-  show the date too
+- **Settings…** — any IANA timezone, custom label, 12/24-hour,
+  show the date too; plus weather place and Pomodoro lengths
 
 Works on GNOME Shell 45–50.
 
@@ -37,5 +37,26 @@ Works on GNOME Shell 45–50.
 
 - `extension.js` — panel clock, sits at position 1 of the panel's centre box
   (the built-in date/time is position 0)
+- `lib.js` — timezone/weather helpers
 - `prefs.js` — settings window (Adw)
 - `schemas/` — GSettings for timezone / label / format
+
+## v5 — Weather, Pomodoro, Caffeine (2026-11-01)
+
+- **Seconds removed everywhere.** The clock now wakes once a minute, aligned
+  to the minute boundary — no 1-second tick, so idle power use is effectively
+  zero. The Pomodoro is the only thing that ticks per-second, and only while
+  a session is running.
+- **Weather** next to the clock (symbol + temperature), with today's min/max,
+  humidity and wind in the menu. Source: Open-Meteo (free, no API key),
+  default Melbourne; presets in the menu, any coordinates in Settings.
+- **Pomodoro** in the menu: start/pause/resume/reset, presets 25/5, 50/10,
+  15/3, 45/15, panel countdown while running, notifications, sessions counter.
+- **Caffeine** in the menu: stay-awake switch (SessionManager inhibit), with
+  a ☕ shown in the panel while it's on.
+
+Note on Shexli: version 0.2.1 segfaults inside its own AST walker when
+analyzing the v5 extension.js (a Shexli bug — the file passes `node --check`,
+and v4 analyzed clean). Manual guideline checks for v5: all timers removed in
+`destroy()`, GSettings signal disconnected in `destroy()`, Soup session
+aborted in `destroy()`.

@@ -30,20 +30,17 @@ export default class SecondClockPreferences extends ExtensionPreferences {
         });
         window.add(page);
 
+        // --- Clock ---
         const group = new Adw.PreferencesGroup({
-            title: 'Timezone',
-            description: 'Pick a preset, or type any IANA timezone below (e.g. Asia/Colombo).',
+            title: 'Clock timezone',
+            description: 'Pick a preset, or type any IANA timezone below (e.g. Asia/Colombo). The clock updates once a minute — no seconds, to save power.',
         });
         page.add(group);
 
         const model = new Gtk.StringList();
         ZONES.forEach(z => model.append(z));
-        const zoneRow = new Adw.ComboRow({
-            title: 'Preset timezone',
-            model,
-        });
-        const current = settings.get_string('timezone');
-        const idx = ZONES.indexOf(current);
+        const zoneRow = new Adw.ComboRow({title: 'Preset timezone', model});
+        const idx = ZONES.indexOf(settings.get_string('timezone'));
         if (idx >= 0)
             zoneRow.selected = idx;
         zoneRow.connect('notify::selected', () => {
@@ -61,17 +58,59 @@ export default class SecondClockPreferences extends ExtensionPreferences {
         settings.bind('label', labelEntry, 'text', Gio.SettingsBindFlags.DEFAULT);
         group.add(labelEntry);
 
-        const fmtGroup = new Adw.PreferencesGroup({title: 'Format'});
+        const fmtGroup = new Adw.PreferencesGroup({title: 'Clock format'});
         page.add(fmtGroup);
-
-        const mkSwitch = (title, key) => {
+        const mkSwitch = (parent, title, key) => {
             const row = new Adw.SwitchRow({title});
             settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
-            fmtGroup.add(row);
+            parent.add(row);
         };
-        mkSwitch('Show label', 'show-label');
-        mkSwitch('24-hour time', 'use-24h');
-        mkSwitch('Show seconds', 'show-seconds');
-        mkSwitch('Show date', 'show-date');
+        mkSwitch(fmtGroup, 'Show label', 'show-label');
+        mkSwitch(fmtGroup, '24-hour time', 'use-24h');
+        mkSwitch(fmtGroup, 'Show date', 'show-date');
+
+        // --- Weather ---
+        const wxGroup = new Adw.PreferencesGroup({
+            title: 'Weather',
+            description: 'From Open-Meteo (free, no account or API key). Pick a place in the panel menu, or type coordinates here.',
+        });
+        page.add(wxGroup);
+        mkSwitch(wxGroup, 'Show weather', 'show-weather');
+
+        const wxLabel = new Adw.EntryRow({title: 'Place name'});
+        settings.bind('weather-label', wxLabel, 'text', Gio.SettingsBindFlags.DEFAULT);
+        wxGroup.add(wxLabel);
+
+        const wxLat = new Adw.EntryRow({title: 'Latitude (e.g. -37.814 for Melbourne, 6.927 for Colombo)'});
+        settings.bind('weather-lat', wxLat, 'text', Gio.SettingsBindFlags.DEFAULT);
+        wxGroup.add(wxLat);
+
+        const wxLon = new Adw.EntryRow({title: 'Longitude (e.g. 144.963, 79.861)'});
+        settings.bind('weather-lon', wxLon, 'text', Gio.SettingsBindFlags.DEFAULT);
+        wxGroup.add(wxLon);
+
+        const wxRefresh = new Adw.SpinRow({
+            title: 'Refresh every (minutes)',
+            adjustment: new Gtk.Adjustment({lower: 10, upper: 120, step_increment: 5}),
+        });
+        settings.bind('weather-refresh', wxRefresh, 'value', Gio.SettingsBindFlags.DEFAULT);
+        wxGroup.add(wxRefresh);
+
+        // --- Pomodoro ---
+        const pomoGroup = new Adw.PreferencesGroup({title: 'Pomodoro'});
+        page.add(pomoGroup);
+        const workRow = new Adw.SpinRow({
+            title: 'Work length (minutes)',
+            adjustment: new Gtk.Adjustment({lower: 1, upper: 180, step_increment: 1}),
+        });
+        settings.bind('pomodoro-work', workRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+        pomoGroup.add(workRow);
+
+        const breakRow = new Adw.SpinRow({
+            title: 'Break length (minutes)',
+            adjustment: new Gtk.Adjustment({lower: 1, upper: 60, step_increment: 1}),
+        });
+        settings.bind('pomodoro-break', breakRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+        pomoGroup.add(breakRow);
     }
 }
