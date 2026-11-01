@@ -56,20 +56,9 @@
       <range min="1" max="60"/>
       <summary>Pomodoro break length (minutes)</summary>
     </key>
-    <key name="pomodoro-favourite-1" type="i">
-      <default>5</default>
-      <range min="1" max="240"/>
-      <summary>Pomodoro favourite 1 (minutes)</summary>
-    </key>
-    <key name="pomodoro-favourite-2" type="i">
-      <default>10</default>
-      <range min="1" max="240"/>
-      <summary>Pomodoro favourite 2 (minutes)</summary>
-    </key>
-    <key name="pomodoro-favourite-3" type="i">
-      <default>30</default>
-      <range min="1" max="240"/>
-      <summary>Pomodoro favourite 3 (minutes)</summary>
+    <key name="pomodoro-favourites" type="a(ii)">
+      <default>[(5, 5), (10, 5), (30, 5)]</default>
+      <summary>Pomodoro favourites: list of (work minutes, break minutes)</summary>
     </key>
     <key name="caffeine-on-start" type="b">
       <default>false</default>

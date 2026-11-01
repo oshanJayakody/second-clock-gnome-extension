@@ -125,6 +125,10 @@
     padding-left: 6px;
 }
 
+.sc-fav-box {
+    spacing: 6px;
+}
+
 /* Plain action rows under the cards */
 .second-clock-menu .popup-menu-item {
     color: #cfcfcf;

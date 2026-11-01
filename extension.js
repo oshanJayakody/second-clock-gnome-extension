@@ -197,16 +197,10 @@ class Indicator extends PanelMenu.Button {
         resetBtn.connect('clicked', () => this._pomoReset());
         btnRow.add_child(resetBtn);
 
-        this._favButtons = [];
-        for (const key of ['pomodoro-favourite-1', 'pomodoro-favourite-2', 'pomodoro-favourite-3']) {
-            const btn = new St.Button({label: '', style_class: 'sc-pomo-btn'});
-            btn.connect('clicked', () => {
-                this._settings.set_int('pomodoro-work', this._settings.get_int(key));
-                this._pomoReset();
-            });
-            this._favButtons.push([btn, key]);
-            btnRow.add_child(btn);
-        }
+        this._favBox = new St.BoxLayout({style_class: 'sc-fav-box'});
+        this._favSignature = null;
+        btnRow.add_child(this._favBox);
+        this._rebuildFavButtons();
         pomo.box.add_child(btnRow);
         this.menu.addMenuItem(pomo.item);
 
@@ -363,6 +357,25 @@ class Indicator extends PanelMenu.Button {
         this._wxFooterLabel.text = `Today ${convertTemp(this._weather.min, useF)}°–${convertTemp(this._weather.max, useF)}° · Humidity ${this._weather.humidity}% · Wind ${this._weather.wind} km/h`;
     }
 
+    _rebuildFavButtons() {
+        const favourites = this._settings.get_value('pomodoro-favourites').deep_unpack();
+        const signature = JSON.stringify(favourites);
+        if (signature === this._favSignature)
+            return;
+        this._favSignature = signature;
+        this._favBox.remove_all_children();
+        for (const [work, brk] of favourites) {
+            // Widget shows only the full work time as text — no break time.
+            const btn = new St.Button({label: `${work} min`, style_class: 'sc-pomo-btn'});
+            btn.connect('clicked', () => {
+                this._settings.set_int('pomodoro-work', work);
+                this._settings.set_int('pomodoro-break', brk);
+                this._pomoReset();
+            });
+            this._favBox.add_child(btn);
+        }
+    }
+
     // ---------- Pomodoro ----------
     _pomoToggle() {
         if (this._pomo.phase === 'idle') {
@@ -491,8 +504,7 @@ class Indicator extends PanelMenu.Button {
 
         // Pomodoro card
         this._pomoSessionsLabel.text = this._pomo.sessions ? `${this._pomo.sessions} done` : '';
-        for (const [btn, key] of this._favButtons)
-            btn.label = `${this._settings.get_int(key)} min`;
+        this._rebuildFavButtons();
 
         if (this._pomo.phase === 'idle') {
             this._pomoPhaseLabel.text = 'Ready';

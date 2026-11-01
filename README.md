@@ -103,3 +103,17 @@ World Clocks / Weather cards), not the plain menu in the older screenshot:
   buttons in the widget; tapping one loads that length.
 - The widget no longer shows break time anywhere: buttons and the card show
   only the full length as plain text (`5 min`, `10 min`, `30 min`).
+
+## v10 — Favourites are made from the Pomodoro lengths (2026-11-01)
+
+- Settings → Pomodoro: set **Work length** and **Break length**, then press
+  **Add to favourites** — that pair joins the Favourites list below
+  (duplicates are ignored). Favourites are stored as a list, so there is no
+  fixed count anymore.
+- The Favourites section is a simple list: each entry shows its lengths and
+  has **only a delete (trash) button** in front of it — no editing there;
+  to change one, delete it and add it again.
+- The widget builds its favourite buttons from the same list. Buttons still
+  show only the full work time (`30 min`) — no break time in the widget;
+  tapping one loads both lengths into the timer.
+- Defaults remain 5, 10 and 30 minutes (with the default 5-minute break).
