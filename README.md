@@ -81,3 +81,17 @@ World Clocks / Weather cards), not the plain menu in the older screenshot:
   the hourly data now comes from Open-Meteo too), a **Pomodoro** card and a
   **Caffeine** card. Actions (switch timezone, presets, settings…) stay as
   plain rows under their cards.
+
+## v8 — Settings own the changes; small Pomodoro buttons (2026-11-01)
+
+- Widget menu no longer changes configuration: **Switch timezone** and
+  **Weather location** are gone from the dropdown — both live in Settings
+  (Clock tab dropdown, Weather tab town list). Refresh weather stays.
+- Weather tab: **Celsius/Fahrenheit** switch (applies to the panel, the
+  current conditions and the hourly strip), and a **Town dropdown** of
+  frequent towns (Australian capitals, Colombo/Kandy/Galle, world cities).
+  Pick **Custom…** and name/latitude/longitude fields appear for any other
+  town.
+- Pomodoro: the three long rows are gone. The card now has one row of small
+  buttons — ▶ Start/⏸ Pause (icon + short label), a ↺ reset icon button, and
+  compact length presets `25/5 50/10 15/3 45/15`.

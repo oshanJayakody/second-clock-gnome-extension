@@ -2,25 +2,35 @@
 
 import GLib from 'gi://GLib';
 
-export const QUICK_ZONES = [
-    ['Sri Lanka', 'Asia/Colombo'],
-    ['Melbourne / Sydney', 'Australia/Melbourne'],
-    ['Dubai', 'Asia/Dubai'],
-    ['Singapore', 'Asia/Singapore'],
-    ['London', 'Europe/London'],
-    ['New York', 'America/New_York'],
-    ['Los Angeles', 'America/Los_Angeles'],
-    ['Tokyo', 'Asia/Tokyo'],
+export const FREQUENT_TOWNS = [
+    ['Melbourne', -37.814, 144.963],
+    ['Sydney', -33.869, 151.209],
+    ['Brisbane', -27.470, 153.026],
+    ['Perth', -31.952, 115.857],
+    ['Adelaide', -34.929, 138.600],
+    ['Canberra', -35.281, 149.130],
+    ['Hobart', -42.882, 147.327],
+    ['Darwin', -12.463, 130.844],
+    ['Colombo', 6.927, 79.861],
+    ['Kandy', 7.291, 80.637],
+    ['Galle', 6.053, 80.221],
+    ['Singapore', 1.352, 103.820],
+    ['Kuala Lumpur', 3.139, 101.687],
+    ['Bangkok', 13.756, 100.502],
+    ['Dubai', 25.205, 55.271],
+    ['Tokyo', 35.677, 139.763],
+    ['London', 51.507, -0.128],
+    ['New York', 40.713, -74.006],
+    ['Auckland', -36.849, 174.763],
 ];
 
-export const WEATHER_PLACES = [
-    ['Melbourne', '-37.814', '144.963'],
-    ['Colombo', '6.927', '79.861'],
-    ['Sydney', '-33.869', '151.209'],
-    ['London', '51.507', '-0.128'],
-    ['Dubai', '25.205', '55.271'],
-    ['Singapore', '1.352', '103.820'],
-];
+export function convertTemp(celsius, useFahrenheit) {
+    return Math.round(useFahrenheit ? celsius * 9 / 5 + 32 : celsius);
+}
+
+export function tempUnit(useFahrenheit) {
+    return useFahrenheit ? '°F' : '°C';
+}
 
 export function makeTimeZone(identifier) {
     try {

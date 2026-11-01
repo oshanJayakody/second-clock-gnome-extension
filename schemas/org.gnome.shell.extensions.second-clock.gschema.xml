@@ -37,6 +37,10 @@
       <default>"144.963"</default>
       <summary>Weather longitude</summary>
     </key>
+    <key name="use-fahrenheit" type="b">
+      <default>false</default>
+      <summary>Show temperatures in Fahrenheit instead of Celsius</summary>
+    </key>
     <key name="weather-refresh" type="i">
       <default>30</default>
       <range min="10" max="120"/>

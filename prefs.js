@@ -4,6 +4,8 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+import {FREQUENT_TOWNS} from './lib.js';
+
 const ZONES = [
     'Asia/Colombo',
     'Australia/Melbourne',
@@ -86,24 +88,56 @@ export default class SecondClockPreferences extends ExtensionPreferences {
 
         const wxGroup = new Adw.PreferencesGroup({
             title: 'Weather',
-            description: 'From Open-Meteo (free, no account or API key). Pick a place in the panel menu, or type coordinates here.',
+            description: 'From Open-Meteo (free, no account or API key). Choose a town from the list — or pick Custom… and type your own coordinates.',
         });
         wxPage.add(wxGroup);
         mkSwitch(wxGroup, 'Show weather', 'show-weather');
+        mkSwitch(wxGroup, 'Use Fahrenheit (°F)', 'use-fahrenheit');
 
+        const townNames = FREQUENT_TOWNS.map(t => t[0]);
+        const townModel = new Gtk.StringList();
+        townNames.forEach(n => townModel.append(n));
+        townModel.append('Custom…');
+        const townRow = new Adw.ComboRow({title: 'Town', model: townModel});
+        wxGroup.add(townRow);
+
+        const customGroup = new Adw.PreferencesGroup({
+            title: 'Custom town',
+            description: 'Used only when the town is set to Custom…',
+        });
+        wxPage.add(customGroup);
         const wxLabel = new Adw.EntryRow({title: 'Place name'});
         settings.bind('weather-label', wxLabel, 'text', Gio.SettingsBindFlags.DEFAULT);
-        wxGroup.add(wxLabel);
+        customGroup.add(wxLabel);
 
         const wxLat = new Adw.EntryRow({title: 'Latitude (e.g. -37.814 for Melbourne, 6.927 for Colombo)'});
         settings.bind('weather-lat', wxLat, 'text', Gio.SettingsBindFlags.DEFAULT);
-        wxGroup.add(wxLat);
+        customGroup.add(wxLat);
 
         const wxLon = new Adw.EntryRow({title: 'Longitude (e.g. 144.963, 79.861)'});
         settings.bind('weather-lon', wxLon, 'text', Gio.SettingsBindFlags.DEFAULT);
-        wxGroup.add(wxLon);
+        customGroup.add(wxLon);
 
-        mkSpin(wxGroup, 'Refresh every (minutes)', 'weather-refresh', 10, 120, 5);
+        const syncTownRow = () => {
+            const current = settings.get_string('weather-label');
+            const idx = townNames.indexOf(current);
+            townRow.selected = idx >= 0 ? idx : townNames.length; // Custom…
+            customGroup.visible = idx < 0;
+        };
+        townRow.connect('notify::selected', () => {
+            if (townRow.selected < townNames.length) {
+                const [name, lat, lon] = FREQUENT_TOWNS[townRow.selected];
+                settings.set_string('weather-label', name);
+                settings.set_string('weather-lat', lat.toFixed(3));
+                settings.set_string('weather-lon', lon.toFixed(3));
+            }
+            customGroup.visible = townRow.selected >= townNames.length;
+        });
+        syncTownRow();
+
+        const wxRefreshGroup = new Adw.PreferencesGroup({title: 'Updates'});
+        wxPage.add(wxRefreshGroup);
+        mkSpin(wxRefreshGroup, 'Refresh every (minutes)', 'weather-refresh', 10, 120, 5);
 
         // ================= Pomodoro tab =================
         const pomoPage = new Adw.PreferencesPage({

@@ -20,7 +20,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {QUICK_ZONES, WEATHER_PLACES, makeTimeZone, weatherInfo, weatherIconName, fmtCountdown} from './lib.js';
+import {makeTimeZone, weatherInfo, weatherIconName, fmtCountdown, convertTemp, tempUnit} from './lib.js';
 
 function hourLabel(isoTime) {
     const h = parseInt(isoTime.slice(11, 13), 10);
@@ -143,17 +143,7 @@ class Indicator extends PanelMenu.Button {
         this._clockLocalLabel = new St.Label({text: '', style_class: 'sc-muted'});
         clock.box.add_child(this._clockLocalLabel);
         this.menu.addMenuItem(clock.item);
-
-        const zoneMenu = new PopupMenu.PopupSubMenuMenuItem('Switch timezone');
-        for (const [name, tz] of QUICK_ZONES) {
-            const mi = new PopupMenu.PopupMenuItem(name);
-            mi.connect('activate', () => {
-                this._settings.set_string('timezone', tz);
-                this._settings.set_string('label', name === 'Melbourne / Sydney' ? 'Melbourne' : name);
-            });
-            zoneMenu.menu.addMenuItem(mi);
-        }
-        this.menu.addMenuItem(zoneMenu);
+        // Note: timezone and weather location are changed in Settings only.
 
         // ---- Weather card ----
         const wx = this._card('Weather');
@@ -165,19 +155,6 @@ class Indicator extends PanelMenu.Button {
         this._wxFooterLabel = new St.Label({text: '', style_class: 'sc-muted'});
         wx.box.add_child(this._wxFooterLabel);
         this.menu.addMenuItem(wx.item);
-
-        const placeMenu = new PopupMenu.PopupSubMenuMenuItem('Weather location');
-        for (const [name, lat, lon] of WEATHER_PLACES) {
-            const mi = new PopupMenu.PopupMenuItem(name);
-            mi.connect('activate', () => {
-                this._settings.set_string('weather-label', name);
-                this._settings.set_string('weather-lat', lat);
-                this._settings.set_string('weather-lon', lon);
-                this._fetchWeather();
-            });
-            placeMenu.menu.addMenuItem(mi);
-        }
-        this.menu.addMenuItem(placeMenu);
 
         const refreshItem = new PopupMenu.PopupMenuItem('Refresh weather now');
         refreshItem.connect('activate', () => this._fetchWeather());
@@ -199,27 +176,38 @@ class Indicator extends PanelMenu.Button {
         pomo.box.add_child(pomoRow);
         this._pomoStatusLabel = new St.Label({text: '', style_class: 'sc-muted'});
         pomo.box.add_child(this._pomoStatusLabel);
-        this.menu.addMenuItem(pomo.item);
 
-        this._pomoToggleItem = new PopupMenu.PopupMenuItem('Start Pomodoro');
-        this._pomoToggleItem.connect('activate', () => this._pomoToggle());
-        this.menu.addMenuItem(this._pomoToggleItem);
+        // Small buttons in a single row: play/pause, reset, length presets
+        const btnRow = new St.BoxLayout({style_class: 'sc-pomo-row', x_expand: true});
 
-        const pomoResetItem = new PopupMenu.PopupMenuItem('Reset Pomodoro');
-        pomoResetItem.connect('activate', () => this._pomoReset());
-        this.menu.addMenuItem(pomoResetItem);
+        this._pomoPlayBtn = new St.Button({style_class: 'sc-pomo-btn'});
+        const playBox = new St.BoxLayout();
+        this._pomoPlayIcon = new St.Icon({icon_name: 'media-playback-start-symbolic', icon_size: 14});
+        this._pomoPlayLabel = new St.Label({text: 'Start', style_class: 'sc-btn-label'});
+        playBox.add_child(this._pomoPlayIcon);
+        playBox.add_child(this._pomoPlayLabel);
+        this._pomoPlayBtn.set_child(playBox);
+        this._pomoPlayBtn.connect('clicked', () => this._pomoToggle());
+        btnRow.add_child(this._pomoPlayBtn);
 
-        const pomoPresetMenu = new PopupMenu.PopupSubMenuMenuItem('Pomodoro lengths');
-        for (const [name, work, brk] of [['25 / 5', 25, 5], ['50 / 10', 50, 10], ['15 / 3', 15, 3], ['45 / 15', 45, 15]]) {
-            const mi = new PopupMenu.PopupMenuItem(`${name} min`);
-            mi.connect('activate', () => {
+        const resetBtn = new St.Button({
+            style_class: 'sc-pomo-btn',
+            child: new St.Icon({icon_name: 'view-refresh-symbolic', icon_size: 14}),
+        });
+        resetBtn.connect('clicked', () => this._pomoReset());
+        btnRow.add_child(resetBtn);
+
+        for (const [label, work, brk] of [['25/5', 25, 5], ['50/10', 50, 10], ['15/3', 15, 3], ['45/15', 45, 15]]) {
+            const btn = new St.Button({label, style_class: 'sc-pomo-btn'});
+            btn.connect('clicked', () => {
                 this._settings.set_int('pomodoro-work', work);
                 this._settings.set_int('pomodoro-break', brk);
                 this._pomoReset();
             });
-            pomoPresetMenu.menu.addMenuItem(mi);
+            btnRow.add_child(btn);
         }
-        this.menu.addMenuItem(pomoPresetMenu);
+        pomo.box.add_child(btnRow);
+        this.menu.addMenuItem(pomo.item);
 
         // ---- Caffeine card (switch row) ----
         this._caffeineItem = new PopupMenu.PopupSwitchMenuItem('Caffeine — stay awake', false);
@@ -358,19 +346,20 @@ class Indicator extends PanelMenu.Button {
         if (!this._weather)
             return; // keep the "…" / error text set elsewhere
 
-        this._wxStatusLabel.text = `${this._weather.desc} · now ${this._weather.temp}°C`;
+        const useF = this._settings.get_boolean('use-fahrenheit');
+        this._wxStatusLabel.text = `${this._weather.desc} · now ${convertTemp(this._weather.temp, useF)}${tempUnit(useF)}`;
         this._wxHoursBox.remove_all_children();
         for (const hour of this._weather.hourly) {
             const col = new St.BoxLayout({vertical: true, style_class: 'sc-hour-col'});
             const time = new St.Label({text: hour.label, style_class: 'sc-hour-time', x_align: Clutter.ActorAlign.CENTER});
             const icon = new St.Icon({icon_name: hour.icon, icon_size: 26, style_class: 'sc-hour-icon', x_align: Clutter.ActorAlign.CENTER});
-            const temp = new St.Label({text: `${hour.temp}°`, style_class: 'sc-hour-temp', x_align: Clutter.ActorAlign.CENTER});
+            const temp = new St.Label({text: `${convertTemp(hour.temp, useF)}°`, style_class: 'sc-hour-temp', x_align: Clutter.ActorAlign.CENTER});
             col.add_child(time);
             col.add_child(icon);
             col.add_child(temp);
             this._wxHoursBox.add_child(col);
         }
-        this._wxFooterLabel.text = `Today ${this._weather.min}°–${this._weather.max}° · Humidity ${this._weather.humidity}% · Wind ${this._weather.wind} km/h`;
+        this._wxFooterLabel.text = `Today ${convertTemp(this._weather.min, useF)}°–${convertTemp(this._weather.max, useF)}° · Humidity ${this._weather.humidity}% · Wind ${this._weather.wind} km/h`;
     }
 
     // ---------- Pomodoro ----------
@@ -484,8 +473,10 @@ class Indicator extends PanelMenu.Button {
         const label = this._clockLabel ?? '';
         parts.push(label ? `${label}  ${this._clockText ?? ''}` : (this._clockText ?? ''));
 
-        if (this._settings.get_boolean('show-weather') && this._weather)
-            parts.push(`${this._weather.symbol} ${this._weather.temp}°C`);
+        if (this._settings.get_boolean('show-weather') && this._weather) {
+            const useF = this._settings.get_boolean('use-fahrenheit');
+            parts.push(`${this._weather.symbol} ${convertTemp(this._weather.temp, useF)}${tempUnit(useF)}`);
+        }
 
         if (this._pomo.phase !== 'idle')
             parts.push(`⏱ ${fmtCountdown(this._pomo.remaining)}`);
@@ -503,12 +494,15 @@ class Indicator extends PanelMenu.Button {
             this._pomoPhaseLabel.text = 'Ready';
             this._pomoTimeLabel.text = fmtCountdown(this._settings.get_int('pomodoro-work') * 60);
             this._pomoStatusLabel.text = `${this._settings.get_int('pomodoro-work')} min work · ${this._settings.get_int('pomodoro-break')} min break`;
-            this._pomoToggleItem.label.text = 'Start Pomodoro';
+            this._pomoPlayIcon.icon_name = 'media-playback-start-symbolic';
+            this._pomoPlayLabel.text = 'Start';
         } else {
             this._pomoPhaseLabel.text = this._pomo.phase === 'work' ? 'Work' : 'Break';
             this._pomoTimeLabel.text = fmtCountdown(this._pomo.remaining);
             this._pomoStatusLabel.text = this._pomo.running ? 'Running…' : 'Paused';
-            this._pomoToggleItem.label.text = this._pomo.running ? 'Pause Pomodoro' : 'Resume Pomodoro';
+            this._pomoPlayIcon.icon_name = this._pomo.running
+                ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+            this._pomoPlayLabel.text = this._pomo.running ? 'Pause' : 'Resume';
         }
     }
 
