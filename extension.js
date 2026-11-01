@@ -27,12 +27,17 @@ class Indicator extends PanelMenu.Button {
         this._extension = extension;
         this._settings = extension.getSettings();
 
+        // Theme: pill in the panel + dark rounded menu (see stylesheet.css)
+        this.add_style_class_name('second-clock-button');
+        this.menu.actor.add_style_class_name('second-clock-menu');
+
         this._clockTimer = 0;
         this._weatherTimer = 0;
         this._weather = null;
         this._weatherFetchedAt = 0;
         this._soupSession = new Soup.Session();
         this._inhibitCookie = 0;
+        this._caffeineTimer = 0;
 
         // Pomodoro state: phase 'idle' | 'work' | 'break'
         this._pomo = {
@@ -72,6 +77,11 @@ class Indicator extends PanelMenu.Button {
         this._fetchWeather();
         this._scheduleWeatherTimer();
         this._render();
+
+        if (this._settings.get_boolean('caffeine-on-start')) {
+            this._caffeineItem.setToggleState(true);
+            this._setCaffeine(true);
+        }
     }
 
     _buildMenu() {
@@ -327,16 +337,33 @@ class Indicator extends PanelMenu.Button {
                     try {
                         this._inhibitCookie = conn.call_finish(res).deep_unpack()[0];
                         this._render();
+                        const mins = this._settings.get_int('caffeine-duration');
+                        if (mins > 0) {
+                            this._caffeineTimer = GLib.timeout_add_seconds(
+                                GLib.PRIORITY_DEFAULT, mins * 60, () => {
+                                    this._caffeineTimer = 0;
+                                    this._caffeineItem.setToggleState(false);
+                                    this._setCaffeine(false);
+                                    Main.notify('Caffeine', 'Auto-off: stay-awake turned off.');
+                                    return GLib.SOURCE_REMOVE;
+                                });
+                        }
                     } catch {
                         this._caffeineItem.setToggleState(false);
                     }
                 });
-        } else if (!on && this._inhibitCookie) {
-            Gio.DBus.session.call('org.gnome.SessionManager', '/org/gnome/SessionManager',
-                'org.gnome.SessionManager', 'Uninhibit',
-                new GLib.Variant('(u)', [this._inhibitCookie]),
-                null, Gio.DBusCallFlags.NONE, -1, null, null);
-            this._inhibitCookie = 0;
+        } else if (!on) {
+            if (this._caffeineTimer) {
+                GLib.source_remove(this._caffeineTimer);
+                this._caffeineTimer = 0;
+            }
+            if (this._inhibitCookie) {
+                Gio.DBus.session.call('org.gnome.SessionManager', '/org/gnome/SessionManager',
+                    'org.gnome.SessionManager', 'Uninhibit',
+                    new GLib.Variant('(u)', [this._inhibitCookie]),
+                    null, Gio.DBusCallFlags.NONE, -1, null, null);
+                this._inhibitCookie = 0;
+            }
             this._render();
         }
     }
@@ -353,7 +380,7 @@ class Indicator extends PanelMenu.Button {
         if (this._pomo.phase !== 'idle')
             parts.push(`⏱ ${fmtCountdown(this._pomo.remaining)}`);
 
-        if (this._inhibitCookie)
+        if (this._inhibitCookie && this._settings.get_boolean('show-caffeine-icon'))
             parts.push('☕');
 
         this._label.text = parts.join('   ');
@@ -392,6 +419,10 @@ class Indicator extends PanelMenu.Button {
             this._weatherTimer = 0;
         }
         this._pomoStopTimer();
+        if (this._caffeineTimer) {
+            GLib.source_remove(this._caffeineTimer);
+            this._caffeineTimer = 0;
+        }
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;

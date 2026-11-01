@@ -60,3 +60,12 @@ analyzing the v5 extension.js (a Shexli bug — the file passes `node --check`,
 and v4 analyzed clean). Manual guideline checks for v5: all timers removed in
 `destroy()`, GSettings signal disconnected in `destroy()`, Soup session
 aborted in `destroy()`.
+
+## v6 — Tabbed settings + widget theme (2026-11-01)
+
+- Settings are now separate tabs: **Clock**, **Weather**, **Pomodoro**,
+  **Caffeine** (the Caffeine tab is new: turn on at start, panel ☕ toggle,
+  auto-off after N minutes).
+- Restyled to the dark "widget" look: the clock sits in a soft pill in the
+  panel, and the dropdown is a dark floating card with rounded corners and
+  muted text (see `stylesheet.css`).

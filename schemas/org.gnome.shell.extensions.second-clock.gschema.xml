@@ -52,5 +52,18 @@
       <range min="1" max="60"/>
       <summary>Pomodoro break length (minutes)</summary>
     </key>
+    <key name="caffeine-on-start" type="b">
+      <default>false</default>
+      <summary>Turn Caffeine on automatically when the extension starts</summary>
+    </key>
+    <key name="show-caffeine-icon" type="b">
+      <default>true</default>
+      <summary>Show a cup symbol in the panel while Caffeine is on</summary>
+    </key>
+    <key name="caffeine-duration" type="i">
+      <default>0</default>
+      <range min="0" max="480"/>
+      <summary>Turn Caffeine off automatically after this many minutes (0 = never)</summary>
+    </key>
   </schema>
 </schemalist>

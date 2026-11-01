@@ -1,4 +1,71 @@
+/* Second Clock theme — matches the dark, rounded "widget" look:
+   a soft pill in the top panel and a floating dark card for the menu. */
+
+.second-clock-button {
+    background-color: rgba(255, 255, 255, 0.13);
+    border-radius: 999px;
+    padding: 1px 10px;
+    margin: 3px 2px 3px 8px;
+}
+
+.second-clock-button:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+}
+
+.second-clock-button:active,
+.second-clock-button:overview,
+.second-clock-button:focus,
+.second-clock-button:checked {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
 .second-clock-label {
-    padding-left: 8px;
-    padding-right: 4px;
+    padding-left: 2px;
+    padding-right: 2px;
+    font-weight: bold;
+}
+
+/* The dropdown menu as a dark floating card */
+.second-clock-menu .popup-menu-content {
+    background-color: #262626;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.second-clock-menu .popup-menu-item {
+    color: #cfcfcf;
+    border-radius: 10px;
+    padding: 9px 12px;
+}
+
+.second-clock-menu .popup-menu-item:hover,
+.second-clock-menu .popup-menu-item:focus {
+    background-color: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+}
+
+.second-clock-menu .popup-menu-item:active {
+    background-color: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+.second-clock-menu .popup-separator-menu-item {
+    background-color: transparent;
+    height: auto;
+}
+
+.second-clock-menu .popup-separator-menu-item .popup-separator-menu-item-separator {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.second-clock-menu .popup-sub-menu {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.second-clock-menu .popup-menu-item .toggle-switch:checked {
+    background-color: #3584e4;
 }

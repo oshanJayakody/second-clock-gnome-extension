@@ -23,19 +23,32 @@ const ZONES = [
 export default class SecondClockPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
+        const mkSwitch = (parent, title, key) => {
+            const row = new Adw.SwitchRow({title});
+            settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+            parent.add(row);
+        };
+        const mkSpin = (parent, title, key, lower, upper, step) => {
+            const row = new Adw.SpinRow({
+                title,
+                adjustment: new Gtk.Adjustment({lower, upper, step_increment: step}),
+            });
+            settings.bind(key, row, 'value', Gio.SettingsBindFlags.DEFAULT);
+            parent.add(row);
+        };
 
-        const page = new Adw.PreferencesPage({
-            title: 'Second Clock',
+        // ================= Clock tab =================
+        const clockPage = new Adw.PreferencesPage({
+            title: 'Clock',
             icon_name: 'preferences-system-time-symbolic',
         });
-        window.add(page);
+        window.add(clockPage);
 
-        // --- Clock ---
         const group = new Adw.PreferencesGroup({
             title: 'Clock timezone',
             description: 'Pick a preset, or type any IANA timezone below (e.g. Asia/Colombo). The clock updates once a minute — no seconds, to save power.',
         });
-        page.add(group);
+        clockPage.add(group);
 
         const model = new Gtk.StringList();
         ZONES.forEach(z => model.append(z));
@@ -59,22 +72,23 @@ export default class SecondClockPreferences extends ExtensionPreferences {
         group.add(labelEntry);
 
         const fmtGroup = new Adw.PreferencesGroup({title: 'Clock format'});
-        page.add(fmtGroup);
-        const mkSwitch = (parent, title, key) => {
-            const row = new Adw.SwitchRow({title});
-            settings.bind(key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
-            parent.add(row);
-        };
+        clockPage.add(fmtGroup);
         mkSwitch(fmtGroup, 'Show label', 'show-label');
         mkSwitch(fmtGroup, '24-hour time', 'use-24h');
         mkSwitch(fmtGroup, 'Show date', 'show-date');
 
-        // --- Weather ---
+        // ================= Weather tab =================
+        const wxPage = new Adw.PreferencesPage({
+            title: 'Weather',
+            icon_name: 'weather-few-clouds-symbolic',
+        });
+        window.add(wxPage);
+
         const wxGroup = new Adw.PreferencesGroup({
             title: 'Weather',
             description: 'From Open-Meteo (free, no account or API key). Pick a place in the panel menu, or type coordinates here.',
         });
-        page.add(wxGroup);
+        wxPage.add(wxGroup);
         mkSwitch(wxGroup, 'Show weather', 'show-weather');
 
         const wxLabel = new Adw.EntryRow({title: 'Place name'});
@@ -89,28 +103,37 @@ export default class SecondClockPreferences extends ExtensionPreferences {
         settings.bind('weather-lon', wxLon, 'text', Gio.SettingsBindFlags.DEFAULT);
         wxGroup.add(wxLon);
 
-        const wxRefresh = new Adw.SpinRow({
-            title: 'Refresh every (minutes)',
-            adjustment: new Gtk.Adjustment({lower: 10, upper: 120, step_increment: 5}),
-        });
-        settings.bind('weather-refresh', wxRefresh, 'value', Gio.SettingsBindFlags.DEFAULT);
-        wxGroup.add(wxRefresh);
+        mkSpin(wxGroup, 'Refresh every (minutes)', 'weather-refresh', 10, 120, 5);
 
-        // --- Pomodoro ---
-        const pomoGroup = new Adw.PreferencesGroup({title: 'Pomodoro'});
-        page.add(pomoGroup);
-        const workRow = new Adw.SpinRow({
-            title: 'Work length (minutes)',
-            adjustment: new Gtk.Adjustment({lower: 1, upper: 180, step_increment: 1}),
+        // ================= Pomodoro tab =================
+        const pomoPage = new Adw.PreferencesPage({
+            title: 'Pomodoro',
+            icon_name: 'alarm-symbolic',
         });
-        settings.bind('pomodoro-work', workRow, 'value', Gio.SettingsBindFlags.DEFAULT);
-        pomoGroup.add(workRow);
+        window.add(pomoPage);
 
-        const breakRow = new Adw.SpinRow({
-            title: 'Break length (minutes)',
-            adjustment: new Gtk.Adjustment({lower: 1, upper: 60, step_increment: 1}),
+        const pomoGroup = new Adw.PreferencesGroup({
+            title: 'Pomodoro',
+            description: 'Start, pause and reset from the panel menu. You get a notification when a work session or break ends.',
         });
-        settings.bind('pomodoro-break', breakRow, 'value', Gio.SettingsBindFlags.DEFAULT);
-        pomoGroup.add(breakRow);
+        pomoPage.add(pomoGroup);
+        mkSpin(pomoGroup, 'Work length (minutes)', 'pomodoro-work', 1, 180, 1);
+        mkSpin(pomoGroup, 'Break length (minutes)', 'pomodoro-break', 1, 60, 1);
+
+        // ================= Caffeine tab =================
+        const cafPage = new Adw.PreferencesPage({
+            title: 'Caffeine',
+            icon_name: 'emoji-food-beverage-symbolic',
+        });
+        window.add(cafPage);
+
+        const cafGroup = new Adw.PreferencesGroup({
+            title: 'Caffeine',
+            description: 'Keeps the screen and system awake (inhibits suspend and idle) while the switch in the panel menu is on.',
+        });
+        cafPage.add(cafGroup);
+        mkSwitch(cafGroup, 'Turn on when the extension starts', 'caffeine-on-start');
+        mkSwitch(cafGroup, 'Show ☕ in the panel while on', 'show-caffeine-icon');
+        mkSpin(cafGroup, 'Auto-off after (minutes, 0 = never)', 'caffeine-duration', 0, 480, 5);
     }
 }
