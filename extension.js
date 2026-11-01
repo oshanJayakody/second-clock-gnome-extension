@@ -1,7 +1,9 @@
 // Second Clock + Weather + Pomodoro + Caffeine
 // A second timezone clock in the centre of the top panel, beside GNOME's
-// built-in date and time. The clock now updates once per minute (aligned to
-// the minute boundary) — no seconds anywhere, so it costs almost no power.
+// built-in date and time. The clock updates once per minute (aligned to the
+// minute boundary) — no seconds anywhere, so it costs almost no power.
+// The dropdown is styled like GNOME's calendar widgets: dark section cards
+// (World Clock card, Weather card with an hourly strip, Pomodoro, Caffeine).
 // Weather: Open-Meteo (free, no API key), refreshed on an interval.
 // Pomodoro: 1-second ticking only while a session is running.
 // Caffeine: inhibits suspend/idle via the GNOME SessionManager.
@@ -18,7 +20,21 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {QUICK_ZONES, WEATHER_PLACES, makeTimeZone, weatherInfo, fmtCountdown} from './lib.js';
+import {QUICK_ZONES, WEATHER_PLACES, makeTimeZone, weatherInfo, weatherIconName, fmtCountdown} from './lib.js';
+
+function hourLabel(isoTime) {
+    const h = parseInt(isoTime.slice(11, 13), 10);
+    if (!Number.isFinite(h)) return '';
+    return `${((h + 11) % 12) + 1}:00`;
+}
+
+function diffLabel(diffHours) {
+    const totalMinutes = Math.round(Math.abs(diffHours) * 60);
+    const hh = Math.floor(totalMinutes / 60);
+    const mm = totalMinutes % 60;
+    const sign = diffHours > 0 ? '+' : diffHours < 0 ? '-' : '';
+    return `${sign}${hh}:${String(mm).padStart(2, '0')}`;
+}
 
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
@@ -27,7 +43,7 @@ class Indicator extends PanelMenu.Button {
         this._extension = extension;
         this._settings = extension.getSettings();
 
-        // Theme: pill in the panel + dark rounded menu (see stylesheet.css)
+        // Theme: pill in the panel + widget-card menu (see stylesheet.css)
         this.add_style_class_name('second-clock-button');
         this.menu.actor.add_style_class_name('second-clock-menu');
 
@@ -39,7 +55,6 @@ class Indicator extends PanelMenu.Button {
         this._inhibitCookie = 0;
         this._caffeineTimer = 0;
 
-        // Pomodoro state: phase 'idle' | 'work' | 'break'
         this._pomo = {
             phase: 'idle',
             running: false,
@@ -84,14 +99,50 @@ class Indicator extends PanelMenu.Button {
         }
     }
 
+    // A GNOME-calendar-style section card with a bold title header.
+    _card(title) {
+        const item = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            style_class: 'second-clock-card',
+        });
+        const box = new St.BoxLayout({vertical: true, x_expand: true});
+        const header = new St.BoxLayout({x_expand: true});
+        const titleLabel = new St.Label({text: title, style_class: 'sc-card-title'});
+        const rightLabel = new St.Label({
+            text: '',
+            style_class: 'sc-card-right',
+            x_expand: true,
+            x_align: Clutter.ActorAlign.END,
+        });
+        header.add_child(titleLabel);
+        header.add_child(rightLabel);
+        box.add_child(header);
+        item.add_child(box);
+        return {item, box, rightLabel};
+    }
+
     _buildMenu() {
-        // ---- Clock section ----
-        this._fullItem = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this._localItem = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this._diffItem = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this.menu.addMenuItem(this._fullItem);
-        this.menu.addMenuItem(this._localItem);
-        this.menu.addMenuItem(this._diffItem);
+        // ---- World Clock card ----
+        const clock = this._card('World Clock');
+        this._clockDiffLabel = clock.rightLabel;
+
+        const clockRow = new St.BoxLayout({x_expand: true, style_class: 'sc-card-row'});
+        this._clockPlaceLabel = new St.Label({text: '', style_class: 'sc-place'});
+        this._clockTimeLabel = new St.Label({
+            text: '',
+            style_class: 'sc-bigtime',
+            x_expand: true,
+            x_align: Clutter.ActorAlign.END,
+        });
+        clockRow.add_child(this._clockPlaceLabel);
+        clockRow.add_child(this._clockTimeLabel);
+        clock.box.add_child(clockRow);
+
+        this._clockDateLabel = new St.Label({text: '', style_class: 'sc-muted'});
+        clock.box.add_child(this._clockDateLabel);
+        this._clockLocalLabel = new St.Label({text: '', style_class: 'sc-muted'});
+        clock.box.add_child(this._clockLocalLabel);
+        this.menu.addMenuItem(clock.item);
 
         const zoneMenu = new PopupMenu.PopupSubMenuMenuItem('Switch timezone');
         for (const [name, tz] of QUICK_ZONES) {
@@ -103,13 +154,17 @@ class Indicator extends PanelMenu.Button {
             zoneMenu.menu.addMenuItem(mi);
         }
         this.menu.addMenuItem(zoneMenu);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // ---- Weather section ----
-        this._weatherItem = new PopupMenu.PopupMenuItem('Weather: …', {reactive: false});
-        this._weatherDetailItem = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this.menu.addMenuItem(this._weatherItem);
-        this.menu.addMenuItem(this._weatherDetailItem);
+        // ---- Weather card ----
+        const wx = this._card('Weather');
+        this._wxPlaceLabel = wx.rightLabel;
+        this._wxStatusLabel = new St.Label({text: '…', style_class: 'sc-muted'});
+        wx.box.add_child(this._wxStatusLabel);
+        this._wxHoursBox = new St.BoxLayout({x_expand: true, style_class: 'sc-hours'});
+        wx.box.add_child(this._wxHoursBox);
+        this._wxFooterLabel = new St.Label({text: '', style_class: 'sc-muted'});
+        wx.box.add_child(this._wxFooterLabel);
+        this.menu.addMenuItem(wx.item);
 
         const placeMenu = new PopupMenu.PopupSubMenuMenuItem('Weather location');
         for (const [name, lat, lon] of WEATHER_PLACES) {
@@ -127,11 +182,24 @@ class Indicator extends PanelMenu.Button {
         const refreshItem = new PopupMenu.PopupMenuItem('Refresh weather now');
         refreshItem.connect('activate', () => this._fetchWeather());
         this.menu.addMenuItem(refreshItem);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // ---- Pomodoro section ----
-        this._pomoStatusItem = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this.menu.addMenuItem(this._pomoStatusItem);
+        // ---- Pomodoro card ----
+        const pomo = this._card('Pomodoro');
+        this._pomoSessionsLabel = pomo.rightLabel;
+        const pomoRow = new St.BoxLayout({x_expand: true, style_class: 'sc-card-row'});
+        this._pomoPhaseLabel = new St.Label({text: '', style_class: 'sc-place'});
+        this._pomoTimeLabel = new St.Label({
+            text: '',
+            style_class: 'sc-bigtime',
+            x_expand: true,
+            x_align: Clutter.ActorAlign.END,
+        });
+        pomoRow.add_child(this._pomoPhaseLabel);
+        pomoRow.add_child(this._pomoTimeLabel);
+        pomo.box.add_child(pomoRow);
+        this._pomoStatusLabel = new St.Label({text: '', style_class: 'sc-muted'});
+        pomo.box.add_child(this._pomoStatusLabel);
+        this.menu.addMenuItem(pomo.item);
 
         this._pomoToggleItem = new PopupMenu.PopupMenuItem('Start Pomodoro');
         this._pomoToggleItem.connect('activate', () => this._pomoToggle());
@@ -152,10 +220,11 @@ class Indicator extends PanelMenu.Button {
             pomoPresetMenu.menu.addMenuItem(mi);
         }
         this.menu.addMenuItem(pomoPresetMenu);
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // ---- Caffeine section ----
-        this._caffeineItem = new PopupMenu.PopupSwitchMenuItem('Caffeine (stay awake)', false);
+        // ---- Caffeine card (switch row) ----
+        this._caffeineItem = new PopupMenu.PopupSwitchMenuItem('Caffeine — stay awake', false);
+        this._caffeineItem.add_style_class_name('second-clock-card');
+        this._caffeineItem.add_style_class_name('sc-caffeine');
         this._caffeineItem.connect('toggled', (_i, state) => this._setCaffeine(state));
         this.menu.addMenuItem(this._caffeineItem);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
@@ -180,15 +249,14 @@ class Indicator extends PanelMenu.Button {
             ? this._settings.get_string('label').trim() : '';
         this._clockLabel = label;
 
-        this._fullItem.label.text = `${label || tzId}:  ${now.format('%A, %d %B %Y, %H:%M')}`;
-        this._localItem.label.text = `Local:  ${local.format('%A, %d %B %Y, %H:%M')} (${local.get_timezone_abbreviation()})`;
+        const placeName = label || tzId.split('/').pop().replace(/_/g, ' ');
+        this._clockPlaceLabel.text = placeName;
+        this._clockTimeLabel.text = now.format(fmt) ?? '';
+        this._clockDateLabel.text = now.format('%A, %d %B %Y');
 
         const diffHours = (now.get_utc_offset() - local.get_utc_offset()) / 3600000000;
-        const abs = Math.abs(diffHours);
-        const hrs = Number.isInteger(abs) ? `${abs}` : abs.toFixed(1);
-        this._diffItem.label.text = diffHours === 0
-            ? 'Same time as local right now'
-            : `${label || tzId} is ${hrs}h ${diffHours > 0 ? 'ahead of' : 'behind'} local time`;
+        this._clockDiffLabel.text = diffLabel(diffHours);
+        this._clockLocalLabel.text = `Local ${local.format(fmt)} (${local.get_timezone_abbreviation()})`;
     }
 
     _scheduleClockTimer() {
@@ -196,7 +264,6 @@ class Indicator extends PanelMenu.Button {
             GLib.source_remove(this._clockTimer);
             this._clockTimer = 0;
         }
-        // Milliseconds until just past the next minute boundary
         const now = GLib.DateTime.new_now_local();
         const msIntoMinute = now.get_second() * 1000 + Math.floor(now.get_microsecond() / 1000);
         const delay = 60000 - msIntoMinute + 100;
@@ -229,13 +296,15 @@ class Indicator extends PanelMenu.Button {
         const lat = parseFloat(this._settings.get_string('weather-lat'));
         const lon = parseFloat(this._settings.get_string('weather-lon'));
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-            this._weatherItem.label.text = 'Weather: set a valid location in Settings';
+            this._weather = null;
+            this._wxStatusLabel.text = 'Set a valid location in Settings';
             return;
         }
         const url = 'https://api.open-meteo.com/v1/forecast' +
             `?latitude=${lat}&longitude=${lon}` +
             '&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m' +
-            '&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1';
+            '&hourly=temperature_2m,weather_code' +
+            '&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
         const message = Soup.Message.new('GET', url);
         this._soupSession.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
             try {
@@ -243,6 +312,20 @@ class Indicator extends PanelMenu.Button {
                 const data = JSON.parse(new TextDecoder().decode(bytes.get_data()));
                 const cur = data.current;
                 const [desc, symbol] = weatherInfo(cur.weather_code);
+
+                let hourly = [];
+                const times = data.hourly?.time ?? [];
+                const targetHour = (cur.time ?? '').slice(0, 13);
+                let idx = times.findIndex(t => t.slice(0, 13) === targetHour);
+                if (idx < 0) idx = 0;
+                for (let i = idx; i < Math.min(idx + 5, times.length); i++) {
+                    hourly.push({
+                        label: hourLabel(times[i]),
+                        icon: weatherIconName(data.hourly.weather_code[i]),
+                        temp: Math.round(data.hourly.temperature_2m[i]),
+                    });
+                }
+
                 this._weather = {
                     temp: Math.round(cur.temperature_2m),
                     desc,
@@ -251,15 +334,43 @@ class Indicator extends PanelMenu.Button {
                     wind: Math.round(cur.wind_speed_10m),
                     max: Math.round(data.daily.temperature_2m_max[0]),
                     min: Math.round(data.daily.temperature_2m_min[0]),
+                    hourly,
                 };
                 this._weatherFetchedAt = Date.now();
             } catch (e) {
                 this._weather = null;
-                this._weatherItem.label.text = 'Weather: unavailable (offline?)';
-                this._weatherDetailItem.label.text = '';
+                this._wxStatusLabel.text = 'Weather unavailable (offline?)';
+                this._wxHoursBox.remove_all_children();
+                this._wxFooterLabel.text = '';
             }
             this._render();
         });
+    }
+
+    _renderWeather() {
+        this._wxPlaceLabel.text = this._settings.get_string('weather-label') || '';
+        if (!this._settings.get_boolean('show-weather')) {
+            this._wxStatusLabel.text = 'Off — enable it in Settings, Weather tab';
+            this._wxHoursBox.remove_all_children();
+            this._wxFooterLabel.text = '';
+            return;
+        }
+        if (!this._weather)
+            return; // keep the "…" / error text set elsewhere
+
+        this._wxStatusLabel.text = `${this._weather.desc} · now ${this._weather.temp}°C`;
+        this._wxHoursBox.remove_all_children();
+        for (const hour of this._weather.hourly) {
+            const col = new St.BoxLayout({vertical: true, style_class: 'sc-hour-col'});
+            const time = new St.Label({text: hour.label, style_class: 'sc-hour-time', x_align: Clutter.ActorAlign.CENTER});
+            const icon = new St.Icon({icon_name: hour.icon, icon_size: 26, style_class: 'sc-hour-icon', x_align: Clutter.ActorAlign.CENTER});
+            const temp = new St.Label({text: `${hour.temp}°`, style_class: 'sc-hour-temp', x_align: Clutter.ActorAlign.CENTER});
+            col.add_child(time);
+            col.add_child(icon);
+            col.add_child(temp);
+            this._wxHoursBox.add_child(col);
+        }
+        this._wxFooterLabel.text = `Today ${this._weather.min}°–${this._weather.max}° · Humidity ${this._weather.humidity}% · Wind ${this._weather.wind} km/h`;
     }
 
     // ---------- Pomodoro ----------
@@ -269,7 +380,6 @@ class Indicator extends PanelMenu.Button {
             this._pomo.remaining = this._settings.get_int('pomodoro-work') * 60;
             this._pomoStart();
         } else if (this._pomo.running) {
-            // pause
             this._pomo.remaining = Math.max(0, (this._pomo.endAt - GLib.get_monotonic_time()) / 1000000);
             this._pomoStopTimer();
             this._pomo.running = false;
@@ -368,7 +478,7 @@ class Indicator extends PanelMenu.Button {
         }
     }
 
-    // ---------- Panel rendering ----------
+    // ---------- Rendering ----------
     _render() {
         const parts = [];
         const label = this._clockLabel ?? '';
@@ -385,26 +495,19 @@ class Indicator extends PanelMenu.Button {
 
         this._label.text = parts.join('   ');
 
-        // Menu weather lines
-        if (this._weather) {
-            const place = this._settings.get_string('weather-label') || 'Weather';
-            this._weatherItem.label.text = `${place}: ${this._weather.symbol} ${this._weather.temp}°C, ${this._weather.desc}`;
-            this._weatherDetailItem.label.text = `Today ${this._weather.min}–${this._weather.max}°C · Humidity ${this._weather.humidity}% · Wind ${this._weather.wind} km/h`;
-        } else if (this._settings.get_boolean('show-weather')) {
-            if (this._weatherItem.label.text === '')
-                this._weatherItem.label.text = 'Weather: …';
-        } else {
-            this._weatherItem.label.text = 'Weather: off (enable in Settings)';
-            this._weatherDetailItem.label.text = '';
-        }
+        this._renderWeather();
 
-        // Menu pomodoro lines
+        // Pomodoro card
+        this._pomoSessionsLabel.text = this._pomo.sessions ? `${this._pomo.sessions} done` : '';
         if (this._pomo.phase === 'idle') {
-            this._pomoStatusItem.label.text = `Pomodoro: ready (${this._settings.get_int('pomodoro-work')} min work / ${this._settings.get_int('pomodoro-break')} min break) · ${this._pomo.sessions} done`;
+            this._pomoPhaseLabel.text = 'Ready';
+            this._pomoTimeLabel.text = fmtCountdown(this._settings.get_int('pomodoro-work') * 60);
+            this._pomoStatusLabel.text = `${this._settings.get_int('pomodoro-work')} min work · ${this._settings.get_int('pomodoro-break')} min break`;
             this._pomoToggleItem.label.text = 'Start Pomodoro';
         } else {
-            const phaseName = this._pomo.phase === 'work' ? 'Work' : 'Break';
-            this._pomoStatusItem.label.text = `Pomodoro: ${phaseName} — ${fmtCountdown(this._pomo.remaining)} ${this._pomo.running ? '' : '(paused)'} · ${this._pomo.sessions} done`;
+            this._pomoPhaseLabel.text = this._pomo.phase === 'work' ? 'Work' : 'Break';
+            this._pomoTimeLabel.text = fmtCountdown(this._pomo.remaining);
+            this._pomoStatusLabel.text = this._pomo.running ? 'Running…' : 'Paused';
             this._pomoToggleItem.label.text = this._pomo.running ? 'Pause Pomodoro' : 'Resume Pomodoro';
         }
     }

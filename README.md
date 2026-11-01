@@ -69,3 +69,15 @@ aborted in `destroy()`.
 - Restyled to the dark "widget" look: the clock sits in a soft pill in the
   panel, and the dropdown is a dark floating card with rounded corners and
   muted text (see `stylesheet.css`).
+
+## v7 — Real widget theme (2026-11-01)
+
+The reference for the theme is GNOME's own calendar widgets (Today /
+World Clocks / Weather cards), not the plain menu in the older screenshot:
+
+- The dropdown is now a stack of **section cards**: a **World Clock** card
+  (`Colombo … 5:34 AM … -5:30`, like the built-in one), a **Weather** card
+  with an **hourly forecast strip** (next 5 hours: time, icon, temperature —
+  the hourly data now comes from Open-Meteo too), a **Pomodoro** card and a
+  **Caffeine** card. Actions (switch timezone, presets, settings…) stay as
+  plain rows under their cards.

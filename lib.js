@@ -49,6 +49,21 @@ export function weatherInfo(code) {
     return ['—', ''];
 }
 
+export function weatherIconName(code) {
+    // WMO weather codes -> symbolic icon names (Adwaita / GNOME weather icons)
+    if (code === 0) return 'weather-clear-symbolic';
+    if (code === 1 || code === 2) return 'weather-few-clouds-symbolic';
+    if (code === 3) return 'weather-overcast-symbolic';
+    if (code === 45 || code === 48) return 'weather-fog-symbolic';
+    if (code >= 51 && code <= 57) return 'weather-showers-scattered-symbolic';
+    if (code >= 61 && code <= 67) return 'weather-showers-symbolic';
+    if (code >= 71 && code <= 77) return 'weather-snow-symbolic';
+    if (code >= 80 && code <= 82) return 'weather-showers-scattered-symbolic';
+    if (code === 85 || code === 86) return 'weather-snow-symbolic';
+    if (code >= 95) return 'weather-storm-symbolic';
+    return 'weather-few-clouds-symbolic';
+}
+
 export function fmtCountdown(totalSeconds) {
     const s = Math.max(0, Math.round(totalSeconds));
     const m = Math.floor(s / 60);
