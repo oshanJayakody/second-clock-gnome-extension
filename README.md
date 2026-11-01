@@ -95,3 +95,11 @@ World Clocks / Weather cards), not the plain menu in the older screenshot:
 - Pomodoro: the three long rows are gone. The card now has one row of small
   buttons — ▶ Start/⏸ Pause (icon + short label), a ↺ reset icon button, and
   compact length presets `25/5 50/10 15/3 45/15`.
+
+## v9 — Pomodoro favourites (2026-11-01)
+
+- Three **favourite lengths** you set yourself in Settings → Pomodoro →
+  Favourites (defaults **5, 10, 30 min**). They replace the old preset
+  buttons in the widget; tapping one loads that length.
+- The widget no longer shows break time anywhere: buttons and the card show
+  only the full length as plain text (`5 min`, `10 min`, `30 min`).

@@ -56,6 +56,21 @@
       <range min="1" max="60"/>
       <summary>Pomodoro break length (minutes)</summary>
     </key>
+    <key name="pomodoro-favourite-1" type="i">
+      <default>5</default>
+      <range min="1" max="240"/>
+      <summary>Pomodoro favourite 1 (minutes)</summary>
+    </key>
+    <key name="pomodoro-favourite-2" type="i">
+      <default>10</default>
+      <range min="1" max="240"/>
+      <summary>Pomodoro favourite 2 (minutes)</summary>
+    </key>
+    <key name="pomodoro-favourite-3" type="i">
+      <default>30</default>
+      <range min="1" max="240"/>
+      <summary>Pomodoro favourite 3 (minutes)</summary>
+    </key>
     <key name="caffeine-on-start" type="b">
       <default>false</default>
       <summary>Turn Caffeine on automatically when the extension starts</summary>

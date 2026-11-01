@@ -154,6 +154,15 @@ export default class SecondClockPreferences extends ExtensionPreferences {
         mkSpin(pomoGroup, 'Work length (minutes)', 'pomodoro-work', 1, 180, 1);
         mkSpin(pomoGroup, 'Break length (minutes)', 'pomodoro-break', 1, 60, 1);
 
+        const favGroup = new Adw.PreferencesGroup({
+            title: 'Favourites',
+            description: 'Your three favourite lengths, shown as quick buttons in the panel menu. Tapping one loads that length.',
+        });
+        pomoPage.add(favGroup);
+        mkSpin(favGroup, 'Favourite 1 (minutes)', 'pomodoro-favourite-1', 1, 240, 1);
+        mkSpin(favGroup, 'Favourite 2 (minutes)', 'pomodoro-favourite-2', 1, 240, 1);
+        mkSpin(favGroup, 'Favourite 3 (minutes)', 'pomodoro-favourite-3', 1, 240, 1);
+
         // ================= Caffeine tab =================
         const cafPage = new Adw.PreferencesPage({
             title: 'Caffeine',

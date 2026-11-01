@@ -197,13 +197,14 @@ class Indicator extends PanelMenu.Button {
         resetBtn.connect('clicked', () => this._pomoReset());
         btnRow.add_child(resetBtn);
 
-        for (const [label, work, brk] of [['25/5', 25, 5], ['50/10', 50, 10], ['15/3', 15, 3], ['45/15', 45, 15]]) {
-            const btn = new St.Button({label, style_class: 'sc-pomo-btn'});
+        this._favButtons = [];
+        for (const key of ['pomodoro-favourite-1', 'pomodoro-favourite-2', 'pomodoro-favourite-3']) {
+            const btn = new St.Button({label: '', style_class: 'sc-pomo-btn'});
             btn.connect('clicked', () => {
-                this._settings.set_int('pomodoro-work', work);
-                this._settings.set_int('pomodoro-break', brk);
+                this._settings.set_int('pomodoro-work', this._settings.get_int(key));
                 this._pomoReset();
             });
+            this._favButtons.push([btn, key]);
             btnRow.add_child(btn);
         }
         pomo.box.add_child(btnRow);
@@ -490,10 +491,13 @@ class Indicator extends PanelMenu.Button {
 
         // Pomodoro card
         this._pomoSessionsLabel.text = this._pomo.sessions ? `${this._pomo.sessions} done` : '';
+        for (const [btn, key] of this._favButtons)
+            btn.label = `${this._settings.get_int(key)} min`;
+
         if (this._pomo.phase === 'idle') {
             this._pomoPhaseLabel.text = 'Ready';
             this._pomoTimeLabel.text = fmtCountdown(this._settings.get_int('pomodoro-work') * 60);
-            this._pomoStatusLabel.text = `${this._settings.get_int('pomodoro-work')} min work · ${this._settings.get_int('pomodoro-break')} min break`;
+            this._pomoStatusLabel.text = `${this._settings.get_int('pomodoro-work')} min`;
             this._pomoPlayIcon.icon_name = 'media-playback-start-symbolic';
             this._pomoPlayLabel.text = 'Start';
         } else {
