@@ -105,7 +105,7 @@ class Indicator extends PanelMenu.Button {
             reactive: false,
             style_class: 'second-clock-card',
         });
-        const box = new St.BoxLayout({vertical: true, x_expand: true});
+        const box = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, x_expand: true});
         const header = new St.BoxLayout({x_expand: true});
         const titleLabel = new St.Label({text: title, style_class: 'sc-card-title'});
         const rightLabel = new St.Label({
@@ -345,7 +345,7 @@ class Indicator extends PanelMenu.Button {
         this._wxStatusLabel.text = `${this._weather.desc} · now ${convertTemp(this._weather.temp, useF)}${tempUnit(useF)}`;
         this._wxHoursBox.remove_all_children();
         for (const hour of this._weather.hourly) {
-            const col = new St.BoxLayout({vertical: true, style_class: 'sc-hour-col'});
+            const col = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL, style_class: 'sc-hour-col'});
             const time = new St.Label({text: hour.label, style_class: 'sc-hour-time', x_align: Clutter.ActorAlign.CENTER});
             const icon = new St.Icon({icon_name: hour.icon, icon_size: 26, style_class: 'sc-hour-icon', x_align: Clutter.ActorAlign.CENTER});
             const temp = new St.Label({text: `${convertTemp(hour.temp, useF)}°`, style_class: 'sc-hour-temp', x_align: Clutter.ActorAlign.CENTER});

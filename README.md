@@ -123,3 +123,11 @@ World Clocks / Weather cards), not the plain menu in the older screenshot:
 - `shell-version` now includes **51** (Fedora's system update moved GNOME
   Shell past 50, and the extension refused to enable — same failure as the
   original Shell 50 cap). No code changes; everything else is v10.
+
+## v12 — Shell 51 code fix (2026-11-05)
+
+- Shell 51 removed the `vertical` property from `St.BoxLayout` (the
+  extension failed with "No property vertical on StBoxLayout"). The two
+  vertical layouts (card container, weather hour columns) now use
+  `orientation: Clutter.Orientation.VERTICAL`, which works on older Shells
+  too.
