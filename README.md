@@ -117,3 +117,9 @@ World Clocks / Weather cards), not the plain menu in the older screenshot:
   show only the full work time (`30 min`) — no break time in the widget;
   tapping one loads both lengths into the timer.
 - Defaults remain 5, 10 and 30 minutes (with the default 5-minute break).
+
+## v11 — GNOME Shell 51 support (2026-11-05)
+
+- `shell-version` now includes **51** (Fedora's system update moved GNOME
+  Shell past 50, and the extension refused to enable — same failure as the
+  original Shell 50 cap). No code changes; everything else is v10.
